@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - mynetwork
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: bitnami/kafka:latest
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+    depends_on:
+      - zookeeper
+    networks:
+      - mynetwork
+    ports:
+      - "9093:9093"
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "kafka:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    command: >
+      bash -c "
+        echo 'Waiting for Zookeeper to start...' &&
+        sleep 30 &&
+        /opt/bitnami/scripts/kafka/entrypoint.sh /opt/bitnami/scripts/kafka/run.sh
+      "
+
+  python-producer:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      - KAFKA_BROKER=kafka:9092
+    volumes:
+      - ./backend:/app/backend
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - mynetwork
+    command: sh -c "sleep 40 && python3 backend/scrape_freelancer_projects.py"
+
+
+  python-consumer:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      - KAFKA_BROKER=kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - mynetwork
+    ports:
+      - "5000:5000"
+    command: sh -c "sleep 10 && python3 backend/kafka_consumer.py"
+
+  node-app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    depends_on:
+      - python-consumer
+    networks:
+      - mynetwork
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+    command: "serve -s frontend/build -l 3000"
+
+networks:
+  mynetwork:
+    driver: bridge
