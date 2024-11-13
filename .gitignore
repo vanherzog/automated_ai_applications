@@ -22,3 +22,5 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 /backend/apikey.py
+/backend/email_credentials.py
+/.env

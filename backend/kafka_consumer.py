@@ -6,6 +6,8 @@ from typing import Optional
 import threading
 import queue
 import logging
+from pydantic import BaseModel
+from send_application import send_application
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -29,12 +31,12 @@ message_queue = queue.Queue()
 hardcoded_examples = [
     {
         "JOB_ID": 1,
-        "JOB_DESCRIPTION": "We are seeking a skilled Python developer to join our team. The ideal candidate should have experience with FastAPI, asyncio, and database integration. Knowledge of Docker and Kubernetes is a plus.",
+        "JOB_DESCRIPTION": "We are seeking a skilled Python developer to join our team. The ideal candidate should have experience with FastAPI, asyncio, and database integration. Knowledge of Docker and Kubernetes is a plus. Email = herzogniklas98@gmail.com",
         "APPLICATION": "As a Python developer with 5 years of experience, I am excited about this opportunity. I have extensive experience with FastAPI and asyncio, having built several high-performance web applications. I'm also proficient in working with various databases and have hands-on experience with Docker and Kubernetes in production environments."
     },
     {
         "JOB_ID": 2,
-        "JOB_DESCRIPTION": "Looking for a frontend developer proficient in React and TypeScript. Experience with Next.js and state management libraries like Redux or MobX is required. Familiarity with GraphQL is a plus.",
+        "JOB_DESCRIPTION": "Looking for a frontend developer proficient in React and TypeScript. Experience with Next.js and state management libraries like Redux or MobX is required. herzogniklas98@gmail.com. Familiarity with GraphQL is a plus.",
         "APPLICATION": "As a frontend developer with 4 years of experience in React and TypeScript, I am well-suited for this position. I have built several large-scale applications using Next.js and have extensive experience with both Redux and MobX for state management. I've also worked on projects using GraphQL, which has greatly improved our data fetching efficiency."
     }
 ]
@@ -105,6 +107,24 @@ async def get_next_job():
         raise HTTPException(status_code=404, detail="No jobs available")
     except Exception as e:
         logger.error(f"Unexpected error in get_next_job: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+class ApplicationRequest(BaseModel):
+    job_id: int
+    application: str
+    job_description: str
+
+@app.post("/api/send-application")
+async def api_send_application(request: ApplicationRequest):
+    try:
+        result = send_application(request.job_id, request.application, request.job_description)
+        if result["success"]:
+            return {"message": "Application sent successfully", "details": result}
+        else:
+            raise HTTPException(status_code=500, detail=result["message"])
+    except Exception as e:
+        logger.error(f"Error in send_application: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 if __name__ == "__main__":
