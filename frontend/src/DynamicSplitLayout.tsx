@@ -1,21 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Button } from "./components/ui/button";
 
-// const API_URL = 'http://localhost:5000';  // Add this line at the top of the file
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-// Define the props interface
-interface DynamicSplitLayoutProps {
-  job_description: string;
-  application: string;
+interface Job {
+  JOB_ID: number;
+  JOB_DESCRIPTION: string;
+  APPLICATION: string;
 }
 
-export default function DynamicSplitLayout({
-  job_description,
-  application,
-}: DynamicSplitLayoutProps) {
-  const [currentJob, setCurrentJob] = useState<{ JOB_ID: number; JOB_DESCRIPTION: string; APPLICATION: string } | null>(null);
-  const [loading, setLoading] = useState(false);
+export default function DynamicSplitLayout() {
+  const [currentJob, setCurrentJob] = useState<Job | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const leftBoxRef = useRef<HTMLDivElement>(null);
   const rightBoxRef = useRef<HTMLDivElement>(null);
@@ -85,7 +80,9 @@ export default function DynamicSplitLayout({
     return (
       <div className="flex flex-col items-center justify-center h-screen">
         <p className="text-red-500 mb-4">{error}</p>
-        <Button onClick={fetchNextJob}>Try Again</Button>
+        <button onClick={fetchNextJob} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+          Try Again
+        </button>
       </div>
     );
   }
@@ -96,39 +93,47 @@ export default function DynamicSplitLayout({
 
   return (
     <div className="flex flex-col h-screen">
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left side */}
-        <div className="w-1/2 p-4 overflow-auto border-r border-gray-200">
+      <div className="flex flex-1 overflow-hidden p-4 gap-4">
+        <div className="w-1/2 overflow-auto border rounded-lg shadow-md">
+          <div className="p-4 border-b">
+            <h2 className="text-xl font-bold">Job Description</h2>
+          </div>
           <div
             ref={leftBoxRef}
-            className="bg-white p-6 rounded-lg shadow-md overflow-auto"
+            className="p-4"
             style={{ height: boxHeight ? `${boxHeight}px` : "auto" }}
           >
-            <h2 className="text-xl font-bold mb-4">Job Description</h2>
-            <p className="whitespace-pre-line">{job_description || currentJob.JOB_DESCRIPTION}</p>
+            <p className="whitespace-pre-line">{currentJob.JOB_DESCRIPTION}</p>
           </div>
         </div>
 
-        {/* Vertical line */}
-        <div className="w-px bg-gray-200"></div>
-
-        {/* Right side */}
-        <div className="w-1/2 p-4 overflow-auto">
+        <div className="w-1/2 overflow-auto border rounded-lg shadow-md">
+          <div className="p-4 border-b">
+            <h2 className="text-xl font-bold">Application</h2>
+          </div>
           <div
             ref={rightBoxRef}
-            className="bg-white p-6 rounded-lg shadow-md overflow-auto"
+            className="p-4"
             style={{ height: boxHeight ? `${boxHeight}px` : "auto" }}
           >
-            <h2 className="text-xl font-bold mb-4">Application</h2>
-            <p className="whitespace-pre-line">{application || currentJob.APPLICATION}</p>
+            <p className="whitespace-pre-line">{currentJob.APPLICATION}</p>
           </div>
         </div>
       </div>
 
-      {/* Buttons at the bottom */}
       <div className="flex justify-center space-x-4 p-4 bg-gray-100">
-        <Button variant="outline" onClick={handleSkip}>Skip</Button>
-        <Button onClick={handleSend}>Send</Button>
+        <button
+          onClick={handleSkip}
+          className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
+        >
+          Skip
+        </button>
+        <button
+          onClick={handleSend}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Send
+        </button>
       </div>
     </div>
   );

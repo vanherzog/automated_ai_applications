@@ -50,7 +50,7 @@ services:
         condition: service_healthy
     networks:
       - mynetwork
-    command: sh -c "sleep 40 && python3 backend/scrape_freelancer_projects.py"
+    command: sh -c "sleep 15 && python3 backend/scrape_freelancer_projects.py"
 
 
   python-consumer:
@@ -66,7 +66,7 @@ services:
       - mynetwork
     ports:
       - "5000:5000"
-    command: sh -c "sleep 10 && python3 backend/kafka_consumer.py"
+    command: sh -c "sleep 13 && python3 backend/kafka_consumer.py"
 
   node-app:
     build:
